@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app/config/constants.dart';
+import 'package:mobile_app/core/services/api_service.dart';
+import 'package:mobile_app/core/services/auth_service.dart';
 
 class CambiarPasswordScreen extends StatefulWidget {
   const CambiarPasswordScreen({super.key});
@@ -22,18 +24,39 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
 
     setState(() => _loading = true);
 
-    // Aquí iría la llamada real a la API
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final empleadoId = await AuthService.getEmpleadoId();
+      if (empleadoId == null) {
+        throw Exception('No se pudo obtener el ID del empleado');
+      }
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Contraseña actualizada correctamente'),
-        backgroundColor: primaryColor,
-      ),
-    );
+      await ApiService.cambiarPasswordEmpleado(
+        empleadoId: empleadoId,
+        actualPassword: _passwordActualController.text.trim(),
+        nuevaPassword: _nuevaPasswordController.text.trim(),
+      );
 
-    setState(() => _loading = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Contraseña actualizada correctamente'),
+          backgroundColor: primaryColor,
+        ),
+      );
+
+      _formKey.currentState?.reset();
+      _passwordActualController.clear();
+      _nuevaPasswordController.clear();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -59,9 +82,9 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                   labelText: 'Contraseña actual',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(_verActual
-                        ? Icons.visibility
-                        : Icons.visibility_off),
+                    icon: Icon(
+                      _verActual ? Icons.visibility : Icons.visibility_off,
+                    ),
                     onPressed: () {
                       setState(() {
                         _verActual = !_verActual;
@@ -81,9 +104,9 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                   labelText: 'Nueva contraseña',
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
-                    icon: Icon(_verNueva
-                        ? Icons.visibility
-                        : Icons.visibility_off),
+                    icon: Icon(
+                      _verNueva ? Icons.visibility : Icons.visibility_off,
+                    ),
                     onPressed: () {
                       setState(() {
                         _verNueva = !_verNueva;
@@ -92,10 +115,9 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                   ),
                   border: const OutlineInputBorder(),
                 ),
-                validator: (value) =>
-                    value == null || value.length < 6
-                        ? 'Debe tener al menos 6 caracteres'
-                        : null,
+                validator: (value) => value == null || value.length < 6
+                    ? 'Debe tener al menos 6 caracteres'
+                    : null,
               ),
               const SizedBox(height: 30),
               SizedBox(

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:mobile_app/core/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/config/constants.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -40,22 +41,14 @@ class AuthService {
     await prefs.setInt(_userIdKey, userId);
 
     // Intentar obtener datos del empleado vinculado al usuario
-    final perfilUrl = Uri.parse('$apiBaseUrl/empleados/$userId/');
-    final perfilResp = await http.get(
-      perfilUrl,
-      headers: {
-        'Authorization': 'Bearer $accessToken',
-        'Content-Type': 'application/json',
-      },
-    );
 
-    if (perfilResp.statusCode == 200) {
-      final empleado = jsonDecode(perfilResp.body);
+    final empleado = await ApiService.obtenerEmpleadoPorUserId(userId);
+
+    if (empleado != null) {
       await prefs.setString(_userNameKey, empleado['nombre'] ?? 'Empleado');
       await prefs.setString(_userRolKey, empleado['cargo'] ?? 'empleado');
       await prefs.setInt(_empleadoIdKey, empleado['id']);
     } else {
-      // Si no tiene perfil de empleado, asumir que es un jefe
       await prefs.setString(_userNameKey, 'Jefe');
       await prefs.setString(_userRolKey, 'admin');
     }

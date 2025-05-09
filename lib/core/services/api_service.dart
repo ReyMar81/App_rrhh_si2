@@ -22,7 +22,8 @@ class ApiService {
     return _handleResponse(response, retry: () => get(endpoint));
   }
 
-  static Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
+  static Future<dynamic> post(
+      String endpoint, Map<String, dynamic> data) async {
     final url = Uri.parse('$apiBaseUrl/$endpoint');
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access');
@@ -56,7 +57,8 @@ class ApiService {
     return _handleResponse(response, retry: () => put(endpoint, data));
   }
 
-  static Future<dynamic> patch(String endpoint, Map<String, dynamic> data) async {
+  static Future<dynamic> patch(
+      String endpoint, Map<String, dynamic> data) async {
     final url = Uri.parse('$apiBaseUrl/$endpoint');
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access');
@@ -90,7 +92,8 @@ class ApiService {
   }
 
   // Manejo de respuestas y errores
-  static Future<dynamic> _handleResponse(http.Response response, {Function? retry}) async {
+  static Future<dynamic> _handleResponse(http.Response response,
+      {Function? retry}) async {
     if (response.statusCode == 204) return null;
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -111,7 +114,8 @@ class ApiService {
     } else {
       try {
         final data = jsonDecode(response.body);
-        throw Exception('Error ${response.statusCode}: ${data['detail'] ?? 'Error desconocido'}');
+        throw Exception(
+            'Error ${response.statusCode}: ${data['detail'] ?? 'Error desconocido'}');
       } catch (_) {
         throw Exception('Error ${response.statusCode}: Respuesta no válida');
       }
@@ -134,6 +138,46 @@ class ApiService {
   static Future<List<dynamic>> obtenerEmpleados() async =>
       await get('empleados/');
 
-static Future<Map<String, dynamic>> obtenerEmpleadoPorId(int id) async =>
-    await get('empleados/$id/');
+  static Future<Map<String, dynamic>> obtenerEmpleadoPorId(int id) async =>
+      await get('empleados/$id/');
+
+  static Future<Map<String, dynamic>?> obtenerEmpleadoPorUserId(
+      int userId) async {
+    final token = await AuthService.getAccessToken();
+    if (token == null) return null;
+
+    final url = Uri.parse('$apiBaseUrl/empleados/');
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final empleados = jsonDecode(response.body) as List;
+      final empleado = empleados.firstWhere(
+        (e) => e['user_id'] == userId,
+        orElse: () => null,
+      );
+      return empleado;
+    }
+    return null;
+  }
+
+  static Future<Map<String, dynamic>> cambiarPasswordEmpleado({
+    required int empleadoId,
+    required String actualPassword,
+    required String nuevaPassword,
+  }) async {
+    final response = await put(
+      'empleados/$empleadoId/cambiar_password/',
+      {
+        'actual_password': actualPassword,
+        'nueva_password': nuevaPassword,
+      },
+    );
+    return response;
+  }
 }
