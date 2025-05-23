@@ -23,18 +23,13 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   Future<void> _cargarPerfil() async {
     setState(() => _loading = true);
-
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getInt('user_id');
+      final empleadoId = prefs.getInt('empleado_id');
+      if (empleadoId == null) throw Exception('ID del empleado no disponible');
 
-      if (userId == null) {
-        throw Exception('ID de usuario no disponible');
-      }
-
-      final data = await ApiService.obtenerEmpleadoPorId(userId);
+      final data = await ApiService.obtenerEmpleadoPorId(empleadoId);
       final empleado = Empleado.fromJson(data);
-
       setState(() => _empleado = empleado);
     } catch (e) {
       if (mounted) {
@@ -50,74 +45,117 @@ class _PerfilScreenState extends State<PerfilScreen> {
     }
   }
 
+  Widget _infoItem(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        children: [
+          Icon(icon, color: primaryColor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "$label: ",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(value),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('Mi Perfil', style: headerStyle),
+        title: const Text('Mi Perfil'),
         backgroundColor: primaryColor,
         centerTitle: true,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _empleado == null
-              ? const Center(child: Text('No se pudo cargar el perfil'))
-              : Padding(
-                  padding: const EdgeInsets.all(defaultPadding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(borderRadius),
-                        ),
-                        elevation: 2,
-                        child: Padding(
-                          padding: const EdgeInsets.all(defaultPadding),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${_empleado!.nombre} ${_empleado!.apellidos}',
-                                style: headerStyle.copyWith(fontSize: 22),
+              ? const Center(child: Text("No se pudo cargar el perfil"))
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    elevation: 5,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Text(
+                              "${_empleado!.nombre} ${_empleado!.apellidos}",
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(height: 8),
-                              Text('CI: ${_empleado!.ci}', style: labelStyle),
-                              Text(
-                                  'Correo: ${_empleado!.correoPersonal ?? '-'}',
-                                  style: labelStyle),
-                              Text('Teléfono: ${_empleado!.telefono}',
-                                  style: labelStyle),
-                              Text('Dirección: ${_empleado!.direccion ?? '-'}',
-                                  style: labelStyle),
-                              Text('Género: ${_empleado!.genero ?? '-'}',
-                                  style: labelStyle),
-                              Text(
-                                  'Estado Civil: ${_empleado!.estadoCivil ?? '-'}',
-                                  style: labelStyle),
-                              Text('Cargo: ${_empleado!.cargo ?? '-'}',
-                                  style: labelStyle),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          style: elevatedButtonStyle,
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/cambiar-password');
-                          },
-                          icon: const Icon(Icons.lock_outline),
-                          label: const Text(
-                            'Cambiar contraseña',
-                            style: buttonTextStyle,
+                          const SizedBox(height: 10),
+                          Center(
+                            child: Text(
+                              _empleado!.cargo ?? 'Sin cargo asignado',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
                           ),
-                        ),
+                          const Divider(height: 30, thickness: 1.2),
+                          _infoItem(
+                              Icons.badge, "CI", _empleado!.ci.toString()),
+                          _infoItem(
+                              Icons.cake,
+                              "Fecha de nacimiento",
+                              _empleado!.fechaNacimiento != null
+                                  ? _empleado!.fechaNacimiento!
+                                      .toString()
+                                      .split(' ')[0]
+                                  : "-"),
+                          _infoItem(Icons.email, "Correo",
+                              _empleado!.correoPersonal ?? "-"),
+                          _infoItem(
+                              Icons.phone, "Teléfono", _empleado!.telefono),
+                          _infoItem(Icons.location_on, "Dirección",
+                              _empleado!.direccion ?? "-"),
+                          _infoItem(
+                              Icons.family_restroom,
+                              "Estado civil",
+                              _empleado!.estadoCivil == "S"
+                                  ? 'Soltero'
+                                  : _empleado!.estadoCivil == "C"
+                                      ? 'Casado'
+                                      : _empleado!.estadoCivil == "V"
+                                          ? 'Viudo'
+                                          : "-"),
+                          _infoItem(
+                              Icons.calendar_today,
+                              "Fecha de ingreso",
+                              // ignore: unnecessary_null_comparison
+                              _empleado!.fechaIngreso != null
+                                  ? _empleado!.fechaIngreso
+                                      .toString()
+                                      .split(' ')[0]
+                                  : "-"),
+                          _infoItem(
+                              Icons.male,
+                              "Género",
+                              _empleado!.genero == 'M'
+                                  ? 'Masculino'
+                                  : 'Femenino'),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
     );

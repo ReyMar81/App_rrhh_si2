@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_app/config/constants.dart';
 import 'package:mobile_app/core/services/api_service.dart';
 import 'package:mobile_app/core/services/auth_service.dart';
+import 'package:mobile_app/routes/app_routes.dart';
 
 class CambiarPasswordScreen extends StatefulWidget {
   const CambiarPasswordScreen({super.key});
@@ -37,17 +38,25 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
       );
 
       if (!mounted) return;
+
+      // Mostrar mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Contraseña actualizada correctamente'),
+          content:
+              Text('Contraseña actualizada correctamente. Cerrando sesión...'),
           backgroundColor: primaryColor,
         ),
       );
 
-      _formKey.currentState?.reset();
-      _passwordActualController.clear();
-      _nuevaPasswordController.clear();
+      // Esperar brevemente para mostrar el mensaje
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Cerrar sesión y redirigir al login
+      await AuthService.logout();
+      // ignore: use_build_context_synchronously
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
     } catch (e) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceAll('Exception: ', '')),

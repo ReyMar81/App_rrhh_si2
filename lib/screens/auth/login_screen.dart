@@ -31,7 +31,15 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      final esPrimerIngreso = await AuthService.isPrimerIngreso();
+
+      if (esPrimerIngreso) {
+        // ignore: use_build_context_synchronously
+        Navigator.pushReplacementNamed(context, AppRoutes.cambiarPasswordFinal);
+      } else {
+        // ignore: use_build_context_synchronously
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+      }
     } else {
       setState(() => _error = 'Credenciales inválidas o error de conexión');
     }

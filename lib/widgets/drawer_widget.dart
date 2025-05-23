@@ -133,53 +133,56 @@ class _DrawerWidgetState extends State<DrawerWidget> {
           // CONTENIDO PRINCIPAL DEL DRAWER
           Expanded(
             child: ListView(
-              padding: EdgeInsets.zero,
               children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  child: Text(
-                    'Gestión',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: sectionLabelColor,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
                 ListTile(
-                  leading: const Icon(Icons.description),
+                  leading: const Icon(Icons.article),
                   title: const Text('Documentos'),
                   onTap: () {
                     Navigator.pushNamed(context, AppRoutes.documentos);
                   },
                 ),
-                ListTile(
-                  leading: const Icon(Icons.account_tree),
+                ExpansionTile(
+                  leading: const Icon(Icons.apartment),
                   title: const Text('Departamentos'),
-                  onTap: () {
-                    Navigator.pushNamed(context, AppRoutes.departamentos);
-                  },
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.group),
+                      title: const Text('Empleados'),
+                      onTap: () {
+                        Navigator.pushNamed(
+                            context, AppRoutes.departamentosEmpleados);
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.work),
+                      title: const Text('Cargos'),
+                      onTap: () {
+                        Navigator.pushNamed(
+                            context, AppRoutes.departamentosCargos);
+                      },
+                    ),
+                  ],
                 ),
-                ListTile(
-                  leading: const Icon(Icons.people),
-                  title: const Text('Empleados'),
-                  onTap: () {
-                    Navigator.pushNamed(context, AppRoutes.empleadosPorDepto);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.check_circle_outline),
-                  title: const Text('Tomar Asistencia'),
-                  onTap: () {
-                    Navigator.pushNamed(context, AppRoutes.tomarAsistencia);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.fact_check),
-                  title: const Text('Asistencias del Día'),
-                  onTap: () {
-                    Navigator.pushNamed(context, AppRoutes.asistenciasHoy);
-                  },
+                ExpansionTile(
+                  leading: const Icon(Icons.access_time),
+                  title: const Text('Asistencia'),
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.how_to_reg),
+                      title: const Text('Marcar Asistencia'),
+                      onTap: () {
+                        Navigator.pushNamed(
+                            context, AppRoutes.marcarAsistencia);
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.history),
+                      title: const Text('Mis Asistencias'),
+                      onTap: () {
+                        Navigator.pushNamed(context, AppRoutes.misAsistencias);
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),

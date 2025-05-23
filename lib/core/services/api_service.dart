@@ -1,5 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:mobile_app/core/models/asistencia.dart';
+import 'package:mobile_app/core/models/cargo.dart';
+import 'package:mobile_app/core/models/departamento.dart';
+import 'package:mobile_app/core/models/documento.dart';
+import 'package:mobile_app/core/models/empleado_por_departamento.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/config/constants.dart';
 import 'package:mobile_app/core/services/auth_service.dart';
@@ -127,8 +132,29 @@ class ApiService {
   // ============================
 
   // Departamentos
-  static Future<List<dynamic>> obtenerDepartamentos() async =>
-      await get('departamentos/');
+  static Future<List<Departamento>> obtenerDepartamentos() async {
+    final data = await get('departamentos/');
+    return data
+        .map<Departamento>((json) => Departamento.fromJson(json))
+        .toList();
+  }
+
+// Obtener cargos por departamento
+  static Future<List<Cargo>> obtenerCargosPorDepartamento(
+      int departamentoId) async {
+    final data = await get('departamentos/$departamentoId/cargos/');
+    return data.map<Cargo>((json) => Cargo.fromJson(json)).toList();
+  }
+
+// Obtener empleados por departamento
+  static Future<List<EmpleadoPorDepartamento>> obtenerEmpleadosPorDepartamento(
+      int id) async {
+    final data = await get('departamentos/$id/empleados/');
+    return data
+        .map<EmpleadoPorDepartamento>(
+            (json) => EmpleadoPorDepartamento.fromJson(json))
+        .toList();
+  }
 
   // Documentos
   static Future<List<dynamic>> obtenerDocumentos() async =>
@@ -141,29 +167,13 @@ class ApiService {
   static Future<Map<String, dynamic>> obtenerEmpleadoPorId(int id) async =>
       await get('empleados/$id/');
 
-  static Future<Map<String, dynamic>?> obtenerEmpleadoPorUserId(
-      int userId) async {
-    final token = await AuthService.getAccessToken();
-    if (token == null) return null;
+  static Future<Map<String, dynamic>?> obtenerEmpleadoActual() async {
+    return await get('empleados/actual/');
+  }
 
-    final url = Uri.parse('$apiBaseUrl/empleados/');
-    final response = await http.get(
-      url,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final empleados = jsonDecode(response.body) as List;
-      final empleado = empleados.firstWhere(
-        (e) => e['user_id'] == userId,
-        orElse: () => null,
-      );
-      return empleado;
-    }
-    return null;
+  static Future<List<Documento>> obtenerMisDocumentos() async {
+    final data = await get('documentos/mios/');
+    return data.map<Documento>((json) => Documento.fromJson(json)).toList();
   }
 
   static Future<Map<String, dynamic>> cambiarPasswordEmpleado({
@@ -179,5 +189,21 @@ class ApiService {
       },
     );
     return response;
+  }
+
+// Marcar entrada o salida
+  static Future<Map<String, dynamic>> marcarAsistencia() async {
+    return await post('asistencia/registrar/', {});
+  }
+
+// Obtener historial de asistencias
+  static Future<List<Asistencia>> obtenerMisAsistencias() async {
+    final data = await get('asistencia/mis_asistencias/');
+    return data.map<Asistencia>((json) => Asistencia.fromJson(json)).toList();
+  }
+
+// Obtener estado de asistencia
+  static Future<Map<String, dynamic>> obtenerEstadoAsistenciaHoy() async {
+    return await get('asistencia/estado_asistencia/');
   }
 }

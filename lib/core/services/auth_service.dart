@@ -12,8 +12,9 @@ class AuthService {
   static const String _userRolKey = 'user_rol';
   static const String _userIdKey = 'user_id';
   static const String _empleadoIdKey = 'empleado_id';
+  static const String _primerIngresoKey = 'primer_ingreso';
 
-  /// Inicia sesión, guarda tokens y datos del empleado o jefe
+  /// Inicia sesión, guarda tokens y datos del usuario
   static Future<bool> login({
     required String username,
     required String password,
@@ -35,22 +36,23 @@ class AuthService {
     await prefs.setString(_accessTokenKey, accessToken);
     await prefs.setString(_refreshTokenKey, refreshToken);
 
-    // Obtener user_id desde el token decodificado
+    // Decodificar el token para extraer datos
     final decodedToken = JwtDecoder.decode(accessToken);
     final userId = decodedToken['user_id'];
+    final userRol = decodedToken['rol'] ?? 'empleado';
+    final primerIngreso = decodedToken['cambio_password_pendiente'] ?? false;
+
     await prefs.setInt(_userIdKey, userId);
+    await prefs.setString(_userRolKey, userRol);
+    await prefs.setBool(_primerIngresoKey, primerIngreso);
 
-    // Intentar obtener datos del empleado vinculado al usuario
-
-    final empleado = await ApiService.obtenerEmpleadoPorUserId(userId);
-
+    // Obtener nombre y empleado_id si es empleado
+    final empleado = await ApiService.obtenerEmpleadoActual();
     if (empleado != null) {
       await prefs.setString(_userNameKey, empleado['nombre'] ?? 'Empleado');
-      await prefs.setString(_userRolKey, empleado['cargo'] ?? 'empleado');
       await prefs.setInt(_empleadoIdKey, empleado['id']);
     } else {
-      await prefs.setString(_userNameKey, 'Jefe');
-      await prefs.setString(_userRolKey, 'admin');
+      await prefs.setString(_userNameKey, 'Usuario');
     }
 
     return true;
@@ -58,12 +60,7 @@ class AuthService {
 
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_accessTokenKey);
-    await prefs.remove(_refreshTokenKey);
-    await prefs.remove(_userNameKey);
-    await prefs.remove(_userRolKey);
-    await prefs.remove(_userIdKey);
-    await prefs.remove(_empleadoIdKey);
+    await prefs.clear();
   }
 
   static Future<bool> refreshAccessToken() async {
@@ -82,34 +79,36 @@ class AuthService {
       final data = jsonDecode(response.body);
       final newAccess = data['access'];
       await prefs.setString(_accessTokenKey, newAccess);
+
+      // También actualizar primerIngreso y rol del nuevo token
+      final decodedToken = JwtDecoder.decode(newAccess);
+      await prefs.setBool(_primerIngresoKey,
+          decodedToken['cambio_password_pendiente'] ?? false);
+      await prefs.setString(_userRolKey, decodedToken['rol'] ?? 'empleado');
+
       return true;
     }
 
     return false;
   }
 
-  static Future<String?> getAccessToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_accessTokenKey);
-  }
+  // Getters de datos guardados
+  static Future<String?> getAccessToken() async =>
+      (await SharedPreferences.getInstance()).getString(_accessTokenKey);
 
-  static Future<String?> getUserName() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_userNameKey);
-  }
+  static Future<String?> getUserName() async =>
+      (await SharedPreferences.getInstance()).getString(_userNameKey);
 
-  static Future<String?> getUserRol() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_userRolKey);
-  }
+  static Future<String?> getUserRol() async =>
+      (await SharedPreferences.getInstance()).getString(_userRolKey);
 
-  static Future<int?> getEmpleadoId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_empleadoIdKey);
-  }
+  static Future<int?> getEmpleadoId() async =>
+      (await SharedPreferences.getInstance()).getInt(_empleadoIdKey);
 
-  static Future<int?> getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_userIdKey);
-  }
+  static Future<int?> getUserId() async =>
+      (await SharedPreferences.getInstance()).getInt(_userIdKey);
+
+  static Future<bool> isPrimerIngreso() async =>
+      (await SharedPreferences.getInstance()).getBool(_primerIngresoKey) ??
+      false;
 }
