@@ -114,9 +114,11 @@ class _DepartamentosCargosScreenState extends State<DepartamentosCargosScreen> {
                                   itemBuilder: (context, index) {
                                     final c = _cargos[index];
                                     return ListTile(
-                                      title: Text(c.nombre),
+                                      title: Text(c.nombre ?? '-'),
                                       subtitle: Text(
-                                          "Salario: ${c.salario} Bs | Pago: ${c.tipoPago}"),
+                                          "Salario: ${c.salario ?? '-'} Bs | Pago: ${c.tipoPago ?? '-'}\n"
+                                          "Horario: ${c.horarioInicio ?? '-'} - ${c.horarioFin ?? '-'} | "
+                                          "Receso: ${c.recesoDiario ?? '-'}h | Horas: ${c.horasDeTrabajo ?? '-'}h"),
                                       leading: const Icon(Icons.work_outline),
                                     );
                                   },

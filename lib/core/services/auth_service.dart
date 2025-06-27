@@ -19,7 +19,7 @@ class AuthService {
     required String username,
     required String password,
   }) async {
-    final url = Uri.parse('$apiBaseUrl/token/');
+    final url = Uri.parse('$apiBaseUrl/security/token/');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},

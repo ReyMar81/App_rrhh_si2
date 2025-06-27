@@ -1,10 +1,16 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mobile_app/core/models/asistencia.dart';
+import 'package:mobile_app/core/models/boleta.dart';
 import 'package:mobile_app/core/models/cargo.dart';
 import 'package:mobile_app/core/models/departamento.dart';
 import 'package:mobile_app/core/models/documento.dart';
 import 'package:mobile_app/core/models/empleado_por_departamento.dart';
+import 'package:mobile_app/core/models/empleado_mi_departamento.dart';
+import 'package:mobile_app/core/models/evaluacion_pendiente.dart';
+import 'package:mobile_app/core/models/por_evaluar.dart';
+import 'package:mobile_app/core/models/criterio.dart';
+import 'package:mobile_app/core/models/resultado_evaluacion.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/config/constants.dart';
 import 'package:mobile_app/core/services/auth_service.dart';
@@ -119,10 +125,13 @@ class ApiService {
     } else {
       try {
         final data = jsonDecode(response.body);
+        if (data is Map && data.containsKey('error')) {
+          throw jsonEncode(data);
+        }
         throw Exception(
-            'Error ${response.statusCode}: ${data['detail'] ?? 'Error desconocido'}');
+            'Error ${response.statusCode}: ${data['detail'] ?? data.toString()}');
       } catch (_) {
-        throw Exception('Error ${response.statusCode}: Respuesta no válida');
+        throw Exception('Error ${response.statusCode}: ${response.body}');
       }
     }
   }
@@ -193,17 +202,166 @@ class ApiService {
 
 // Marcar entrada o salida
   static Future<Map<String, dynamic>> marcarAsistencia() async {
-    return await post('asistencia/registrar/', {});
+    return await post('registrar/', {});
   }
 
 // Obtener historial de asistencias
   static Future<List<Asistencia>> obtenerMisAsistencias() async {
-    final data = await get('asistencia/mis_asistencias/');
+    final data = await get('mis_asistencias/');
     return data.map<Asistencia>((json) => Asistencia.fromJson(json)).toList();
   }
 
 // Obtener estado de asistencia
   static Future<Map<String, dynamic>> obtenerEstadoAsistenciaHoy() async {
-    return await get('asistencia/estado_asistencia/');
+    return await get('estado_asistencia/');
+  }
+
+  // Boletas
+  static Future<List<Boleta>> obtenerBoletasPorEmpleado(int empleadoId) async {
+    final data = await get('boletas-empleado/$empleadoId/');
+    return data.map<Boleta>((json) => Boleta.fromJson(json)).toList();
+  }
+
+  // Solicitar horas extras
+  static Future<Map<String, dynamic>> solicitarHorasExtras({
+    required String cantidadHoras,
+    required String motivo,
+  }) async {
+    return await post(
+      'horas_extras/solicitar/',
+      {
+        'cantidad_horas_extra_solicitadas': cantidadHoras,
+        'motivo': motivo,
+      },
+    );
+  }
+
+  // Aprobar o rechazar solicitud de horas extras
+  static Future<Map<String, dynamic>> responderSolicitudHorasExtras({
+    required int id,
+    required bool aprobado,
+  }) async {
+    return await patch(
+      'horas_extras/$id/responder/',
+      {'aprobado': aprobado},
+    );
+  }
+
+  // Obtener horas extras pendientes por aprobar
+  static Future<List<dynamic>> obtenerHorasExtrasPendientes() async {
+    final data = await get('horas_extras/pendientes-aprobar/');
+    return data as List<dynamic>;
+  }
+
+  // Obtener empleados de mi departamento (usuario autenticado)
+  static Future<List<EmpleadoMiDepartamento>>
+      obtenerEmpleadosMiDepartamento() async {
+    final data = await get('empleados/mi-departamento/empleados/');
+    return data
+        .map<EmpleadoMiDepartamento>(
+            (json) => EmpleadoMiDepartamento.fromJson(json))
+        .toList();
+  }
+
+// Solicitar evaluación
+  static Future<Map<String, dynamic>> solicitarEvaluacion({
+    required int evaluado,
+    required String motivo,
+  }) async {
+    return await post(
+      'evaluaciones/solicitar/',
+      {
+        'evaluado': evaluado,
+        'motivo': motivo,
+      },
+    );
+  }
+
+  // Obtener evaluaciones pendientes por evaluar
+  static Future<List<EvaluacionPendiente>>
+      obtenerEvaluacionesPendientesEvaluar() async {
+    final data = await get('evaluaciones/pendientes-evaluar/');
+    return data
+        .map<EvaluacionPendiente>((json) => EvaluacionPendiente.fromJson(json))
+        .toList();
+  }
+
+  // Obtener evaluaciones en proceso de un aprobador
+  static Future<List<EvaluacionPorEvaluar>>
+      obtenerEvaluacionesPorEvaluar() async {
+    final data =
+        await get('evaluaciones/evaluacionesde-un-aprobador-en-proceso/');
+    return data
+        .map<EvaluacionPorEvaluar>(
+            (json) => EvaluacionPorEvaluar.fromJson(json))
+        .toList();
+  }
+
+  // Aceptar evaluación
+  static Future<Map<String, dynamic>> aceptarEvaluacion({
+    required int id,
+  }) async {
+    return await patch(
+      'evaluaciones/$id/aceptar/',
+      {},
+    );
+  }
+
+// Crear un nuevo criterio de evaluación
+  static Future<void> postCriterio({
+    required String nombre,
+    required String descripcion,
+  }) async {
+    await post(
+      'criterios/',
+      {
+        'nombre': nombre,
+        'descripcion': descripcion,
+      },
+    );
+  }
+
+// Agregar criterio a una evaluación
+  static Future<void> agregarCriterioAEvaluacion({
+    required int evaluacionId,
+    required int criterioId,
+    required String puntaje,
+    String? comentario,
+  }) async {
+    await post(
+      'evaluaciones/$evaluacionId/agregar-criterio/',
+      {
+        'criterio_id': criterioId,
+        'puntaje': puntaje,
+        'comentario': comentario ?? '',
+      },
+    );
+  }
+
+  static Future<List<Criterio>> obtenerCriteriosNoEvaluados(
+      int evaluacionId) async {
+    final data =
+        await get('evaluaciones/$evaluacionId/criterios-no-evaluados/');
+    return data.map<Criterio>((json) => Criterio.fromJson(json)).toList();
+  }
+
+  static Future<List<ResultadoEvaluacion>> obtenerResultadosEvaluacion(
+      int evaluacionId) async {
+    final data = await get('evaluaciones/$evaluacionId/resultados/');
+    return data
+        .map<ResultadoEvaluacion>((json) => ResultadoEvaluacion.fromJson(json))
+        .toList();
+  }
+
+  static Future<void> finalizarEvaluacion({
+    required int evaluacionId,
+    required String comentarioGeneral,
+  }) async {
+    await patch(
+      'evaluaciones/$evaluacionId/finalizar/',
+      {
+        'comentario_general': comentarioGeneral,
+      },
+    );
   }
 }

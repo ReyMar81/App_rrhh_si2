@@ -184,6 +184,74 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                     ),
                   ],
                 ),
+                // Menú Horas Extras
+                ExpansionTile(
+                  leading: const Icon(Icons.timer),
+                  title: const Text('Horas Extras'),
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.add_circle_outline),
+                      title: const Text('Solicitar'),
+                      onTap: () {
+                        Navigator.pushNamed(
+                            context, AppRoutes.horasExtrasSolicitar);
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.pending_actions),
+                      title: const Text('Pendientes'),
+                      onTap: () {
+                        Navigator.pushNamed(
+                            context, AppRoutes.horasExtrasPendientes);
+                      },
+                    ),
+                  ],
+                ),
+                // Menú Evaluaciones
+                ExpansionTile(
+                  leading: const Icon(Icons.assignment_turned_in),
+                  title: const Text('Evaluaciones'),
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.add_task),
+                      title: const Text('Solicitar'),
+                      onTap: () {
+                        Navigator.pushNamed(
+                            context, AppRoutes.evaluacionSolicitar);
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.pending_actions),
+                      title: const Text('Pendientes'),
+                      onTap: () {
+                        Navigator.pushNamed(
+                            context, AppRoutes.evaluacionPendientes);
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.rate_review),
+                      title: const Text('Por Evaluar'),
+                      onTap: () {
+                        Navigator.pushNamed(
+                            context, AppRoutes.evaluacionPorEvaluar);
+                      },
+                    ),
+                  ],
+                ),
+                ListTile(
+                  leading: const Icon(Icons.receipt_long),
+                  title: const Text('Boletas de Pago'),
+                  onTap: () async {
+                    final empleadoId = await AuthService.getEmpleadoId();
+                    if (empleadoId != null && context.mounted) {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.boletas,
+                        arguments: empleadoId,
+                      );
+                    }
+                  },
+                ),
               ],
             ),
           ),
