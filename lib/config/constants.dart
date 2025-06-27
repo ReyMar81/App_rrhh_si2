@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-// ✅ API BASE URL
+/* // ✅ API BASE URL
 const String apiBaseUrl =
-    'http://10.0.2.2:8000/api'; // Para pruebas en emulador android
+    'http://10.0.2.2:8000/api'; // Para pruebas en emulador android */
 
 /* const String apiBaseUrl =
     'http://192.168.152.200:8000/api';  */ // para pruebas en celular
 
-/* const String apiBaseUrl = 'http://3.92.188.9:80/api'; */
+const String apiBaseUrl = 'http://44.202.165.0:8000/api';
 
 // ✅ COLORES PRINCIPALES
 const Color primaryColor = Color(0xFF3F51B5); // Azul
